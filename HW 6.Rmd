@@ -1,0 +1,139 @@
+---
+title: "HW 6"
+author: "Alejandro Sanchez"
+date: "11/9/2020"
+output: html_document
+---
+
+```{r}
+load("C:/Users/alejo/Desktop/Econometrics/ecob2000_lecture1/acs2017_ny_data.RData")
+attach(acs2017_ny)
+acs2017_ny$LABFORCE <- as.factor(acs2017_ny$LABFORCE)
+levels(acs2017_ny$LABFORCE) <- c("NA","Not in LF","in LF")
+```
+The difference between "NA" and "NOT IN LF" is that people who fall into the "NA" category are not able to participate in the labor force. whether that be due to age or other reasons. We see evidence of this later down in the code when we seperate the age gorups and we see that from age 25 to 35 and for the rest of the age intervals the NA column is 0 and the not in LF column i assigned an actual value. We also see that within the 0 to 25 age group there are some people who are working and some people who could work but either choose not to or a currently unemployed but still actively looking for a job.
+
+```{R}
+
+acs2017_ny$MARST <- as.factor(acs2017_ny$MARST)
+levels(acs2017_ny$MARST) <- c("married spouse present","married spouse absent","separated","divorced","widowed","never married")
+```
+
+```{R}
+acs2017_ny$age_bands <- cut(acs2017_ny$AGE,breaks=c(0,25,35,45,55,65,100))
+table(acs2017_ny$age_bands,acs2017_ny$LABFORCE)
+```
+
+```{R}
+pick_use1 <- (acs2017_ny$AGE >22) & (acs2017_ny$AGE <= 65)
+dat_use1 <- subset(acs2017_ny, pick_use1)
+dat_use1$LABFORCE <- droplevels(dat_use1$LABFORCE)
+```
+
+```{R}
+model_logit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST,
+            family = binomial, data = dat_use1)
+summary(model_logit1)
+```
+
+Here we see that evertything has some statistical significance with the exception of a divorced marital status. I decided to add Citizen status, Household income, and ownership status to see how that would affect the logit model. I see here that hispanics do affect the labor force and we see it at a pretty high significance level. 
+
+```{R}
+
+model_logit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST + CITIZEN + HHINCOME + OWNERSHP, 
+            family = binomial, data = dat_use1)
+summary(model_logit1)
+```
+Here what is interestign is that when I added the other x variables more categories became statiscally insignificant such as AfAm, other races, absent spouse widowed and never married. What I wasn't expecting was that citizenship would come up as insignificant as well meaning in this model there is no correlation between the labor force and citizenship status.This second model however seems better since it is likely that it will have less errors and we see this in the lower AIC score.I also noticed a drop in significance for the hispanic population as soon as we added the other variables.
+
+```{R}
+model_probit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST,
+            family = binomial (link = 'probit'), data = dat_use1)
+summary(model_probit1)
+```
+When running this probit model I saw similar resutls when it comes to the variables. The majority of them just like the original model are significant just the probit model gives different z-values. This model also provides a lower AIC score which means it has the probability of less errors. Let's see what happens when I run the probit model with the extra added variables. 
+```{R}
+model_probit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST + CITIZEN + HHINCOME + OWNERSHP,
+            family = binomial (link = 'probit'), data = dat_use1)
+summary(model_probit1)
+```
+```{R}
+pick_use1 <- (acs2017_ny$AGE >22) & (acs2017_ny$AGE <= 55)& (acs2017_ny$female == 1)
+dat_use1 <- subset(acs2017_ny, pick_use1)
+dat_use1$LABFORCE <- droplevels(dat_use1$LABFORCE)
+```
+
+```{R}
+model_logit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST,
+            family = binomial, data = dat_use1)
+summary(model_logit1)
+```
+
+Right off the bat after specifying that I want to focus on females we could see that the model has a much lower AIC which is really good but when we look at the variables we dropped significance in some. We dropped widowed, spouse absent, Hispanic, AfAm, Age, Age^2.
+
+```{R}
+model_logit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST +  CITIZEN + HHINCOME + OWNERSHP,
+            family = binomial, data = dat_use1)
+summary(model_logit1)
+```
+Adding the extra variables did more positive things this time around. After adding the extra variables some of the x variables that were not statistically significant before now are some of them with the highest confidence levels. 
+
+```{R}
+model_probit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST,
+            family = binomial (link = 'probit'), data = dat_use1)
+summary(model_probit1)
+```
+
+This model has a slightly lower AIc which is good and what I also noticed was that some of the variables that were not statistically significant befoe in the logit model are now significant in this model but not to a huge amount when compared to the others. 
+
+```{R}
+model_probit1 <- glm(LABFORCE ~ AGE + I(AGE^2) + female + AfAm + Asian + race_oth + Hispanic 
+            + educ_hs + educ_somecoll + educ_college + educ_advdeg 
+            + MARST + CITIZEN + HHINCOME + OWNERSHP,
+            family = binomial (link = 'probit'), data = dat_use1)
+summary(model_probit1)
+```
+
+There is not much difference between this one and the logit model. This one increaded a couple of points in the AIC but nothing that would mean a huge difference.Also it once again made some of the variables significant. 
+```{R}
+set.seed(11111)
+index<-sample(x=2,size=nrow(dat_use1),replace=TRUE,prob=c(0.7,0.3))
+train<-dat_use1[index==1,]
+test<-dat_use1[index==2,]
+dim(dat_use1)
+dim(train)
+dim(test)
+```
+
+```{R}
+trainmodel<-glm(LABFORCE ~ AGE + I(AGE^2) + AfAm + Asian + race_oth + Hispanic
+ + educ_hs + educ_somecoll + educ_college + educ_advdeg
+ ,
+ family = binomial, data = dat_use1)
+prob<-predict(object=trainmodel,newdata=test,type="response")
+pred<-cbind(test,prob)
+pred<-transform(pred,predict=ifelse(prob<=0.5,0,1))
+ta<-table(pred$LABFORCE,pred$predict)
+ta
+```
+```{R}
+sum_diag<-sum(diag(ta))
+sum<-sum(ta)
+sum_diag/sum
+```
+
+The prediction accuracy is at about 78.20% accuracy. 
